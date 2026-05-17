@@ -64,6 +64,10 @@ kubectl exec -it deployment/postgres -- psql -U postgres -d meters -c "SELECT * 
 
 - **Shared MeterData model** — used a single shared model between the API and Worker services. A separate HTTP DTO layer could have been introduced, but since both structures are currently identical, a shared model kept the implementation simpler and easier to maintain
 
+## What's Next
+
+- `POST /api/readings/raw` (optional) — not yet implemented due to time constraints. Would parse a Base64-encoded protobuf payload using `Google.Protobuf`, convert it to `MeterData`, and publish to the same queue as the standard endpoint.
+
 ## Architecture Diagram
 
 ![System Diagram](task-diagram.png)
