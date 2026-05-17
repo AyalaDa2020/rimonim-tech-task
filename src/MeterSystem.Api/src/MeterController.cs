@@ -1,4 +1,4 @@
-using System.Globalization;
+using MeterSystem.Shared.Models;
 using Microsoft.AspNetCore.Mvc;
 
 [ApiController]
@@ -15,12 +15,14 @@ public class MeterController : ControllerBase
     }
 
     [HttpPost("readings")]
-    public async Task<IActionResult> PostReadings([FromBody] MeterRequest dto)
+    public async Task<IActionResult> PostReadings([FromBody] MeterData dto)
     {
         _logger.LogInformation("Received request for meter {MeterNumber}", dto.MeterNumber);
 
-        if (!IsValidRequest(dto))
+        if (dto.MeterNumber <= 0 || dto.Readings is null || dto.Readings.Count == 0)
         {
+            _logger.LogWarning("Invalid request: MeterNumber={MeterNumber}, ReadingsCount={ReadingsCount}",
+                dto.MeterNumber, dto.Readings?.Count);
             return BadRequest();
         }
 
@@ -31,27 +33,5 @@ public class MeterController : ControllerBase
         }
 
         return Accepted();
-    }
-
-    private bool IsValidRequest(MeterRequest dto)
-    {
-        if (dto.MeterNumber <= 0 || dto.Readings is null || dto.Readings.Count == 0)
-        {
-            _logger.LogWarning("Invalid request: MeterNumber={MeterNumber}, ReadingsCount={ReadingsCount}",
-                dto.MeterNumber, dto.Readings?.Count);
-            return false;
-        }
-
-        foreach (string timestamp in dto.Readings.Keys)
-        {
-            if (!DateTime.TryParse(timestamp, CultureInfo.InvariantCulture,
-                DateTimeStyles.AdjustToUniversal | DateTimeStyles.AssumeUniversal, out _))
-            {
-                _logger.LogWarning("Invalid timestamp format: {Timestamp}", timestamp);
-                return false;
-            }
-        }
-
-        return true;
     }
 }

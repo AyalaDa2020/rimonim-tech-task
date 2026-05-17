@@ -1,10 +1,11 @@
 using System.Text;
 using System.Text.Json;
+using MeterSystem.Shared.Models;
 using RabbitMQ.Client;
 
 public class MeterLogic
 {
-    public static async Task<bool> AddToMessageQueue(MeterRequest dto, ILogger logger, IConfiguration configuration)
+    public static async Task<bool> AddToMessageQueue(MeterData message, ILogger logger, IConfiguration configuration)
     {
         try
         {
@@ -18,7 +19,7 @@ public class MeterLogic
 
             await channel.QueueDeclareAsync("meter-readings", durable: false, exclusive: false, autoDelete: false);
 
-            var json = JsonSerializer.Serialize(dto);
+            var json = JsonSerializer.Serialize(message);
             var body = Encoding.UTF8.GetBytes(json);
 
             await channel.BasicPublishAsync(
@@ -26,12 +27,12 @@ public class MeterLogic
                 routingKey: "meter-readings",
                 body: body);
 
-            logger.LogInformation("Published meter reading to RabbitMQ for meter {MeterNumber}", dto.MeterNumber);
+            logger.LogInformation("Published meter reading to RabbitMQ for meter {MeterNumber}", message.MeterNumber);
             return true;
         }
         catch (Exception ex)
         {
-            logger.LogError(ex, "Failed to publish meter reading to RabbitMQ for meter {MeterNumber}", dto.MeterNumber);
+            logger.LogError(ex, "Failed to publish meter reading to RabbitMQ for meter {MeterNumber}", message.MeterNumber);
             return false;
         }
     }
