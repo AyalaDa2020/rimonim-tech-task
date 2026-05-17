@@ -16,4 +16,8 @@ spec:
         - name: metersystem-worker
           image: metersystem-worker:latest
           imagePullPolicy: Never
-
+          env:
+            - name: RabbitMQ__Host
+              value: rabbitmq
+            - name: PostgreSQL__ConnectionString
+              value: Host=postgres;Database=meters;Username=postgres;Password=postgres

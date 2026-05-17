@@ -16,4 +16,21 @@ spec:
         - name: metersystem-api
           image: metersystem-api:latest
           imagePullPolicy: Never
-
+          ports:
+            - containerPort: 8080
+          env:
+            - name: RabbitMQ__Host
+              value: rabbitmq
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: metersystem-api
+spec:
+  selector:
+    app: metersystem-api
+  type: NodePort
+  ports:
+    - port: 8080
+      targetPort: 8080
+      nodePort: 30080

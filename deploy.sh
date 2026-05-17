@@ -2,8 +2,10 @@
 set -euo pipefail
 
 echo "Downloading Images..."
-minikube image pull postgres:18
-minikube image pull rabbitmq:3-management
+docker pull postgres:18
+docker pull rabbitmq:3-management
+minikube image load postgres:18
+minikube image load rabbitmq:3-management
 
 echo "Deploying Queue..."
 kubectl apply -f queue/deploy.yaml
