@@ -21,20 +21,28 @@ bash deploy.sh
 The script will:
 1. Pull and load Docker images into Minikube
 2. Deploy RabbitMQ and PostgreSQL
-3. Apply the database schema
+3. Apply the database schema automatically via ConfigMap
 4. Build and deploy the API and Worker
 
-## Accessing the API
+## Accessing the Services
 
+Each command below opens a tunnel — **keep the terminal open** while using the service.
+
+**API:**
 ```bash
 minikube service metersystem-api
 ```
+Navigate to `/swagger` to use the interactive UI.
 
-This opens the API in your browser. Navigate to `/swagger` to use the interactive UI.
+**RabbitMQ Management UI:**
+```bash
+minikube service rabbitmq
+```
+Open the second URL shown in the terminal. Login with `guest` / `guest`.
 
 ## Testing
 
-Send a POST request to `/api/readings`:
+**Standard endpoint** — POST to `/api/readings`:
 
 ```json
 {
@@ -46,9 +54,7 @@ Send a POST request to `/api/readings`:
 }
 ```
 
-A `202 Accepted` response means the reading was queued successfully.
-
-Or send a Base64-encoded protobuf payload to `/api/readings/raw`:
+**Raw protobuf endpoint** — POST to `/api/readings/raw`:
 
 ```json
 {
@@ -56,6 +62,8 @@ Or send a Base64-encoded protobuf payload to `/api/readings/raw`:
   "data": "ChEKBgik9unNBhEK16NwPUqTQAoRCgYIoO/pzQYR16NwPQpKk0A="
 }
 ```
+
+A `202 Accepted` response means the reading was queued successfully.
 
 ## Verifying Data in PostgreSQL
 
@@ -69,7 +77,13 @@ kubectl exec -it deployment/postgres -- psql -U postgres -d meters -c "SELECT * 
 
 - **deploy.sh** — replaced `minikube image pull` with `docker pull` + `minikube image load` because when using the Docker driver on Windows, Minikube containers may not always have external internet access; loading images through Docker is more reliable
 
+- **Database schema** — applied automatically on every postgres startup via a ConfigMap mounted at `/docker-entrypoint-initdb.d/`; no manual schema step required. This works for local development because the pod has no persistent storage and starts fresh on every restart. In production, where the database already exists, this directory is skipped by postgres — a proper migration tool (e.g. Flyway, Liquibase) should be used instead
+
+- **RabbitMQ** — exposed as NodePort to allow direct access to the management UI via `minikube service rabbitmq`
+
 - **MeterReadingWorker** — uses `ON CONFLICT DO NOTHING` when inserting readings to ensure idempotency; readings with the same meter and timestamp are ignored if already inserted
+
+- **Message acknowledgment** — the Worker only ACKs a message after a successful DB save; on failure it NACKs with `requeue: true` so the message returns to the queue
 
 - **Shared MeterData model** — used a single shared model between the API and Worker services. A separate HTTP DTO layer could have been introduced, but since both structures are currently identical, a shared model kept the implementation simpler and easier to maintain
 

@@ -11,9 +11,9 @@ echo "Deploying Queue..."
 kubectl apply -f queue/deploy.yaml
 
 echo "Deploying Database..."
+kubectl create configmap postgres-schema --from-file=schema.sql=database/schema.sql --dry-run=client -o yaml | kubectl apply -f -
 kubectl apply -f database/deploy.yaml
 kubectl wait --for=condition=ready pod -l app=postgres --timeout=300s
-kubectl exec -i "$(kubectl get pod -l app=postgres -o jsonpath='{.items[0].metadata.name}')" --  sh -c 'psql -v ON_ERROR_STOP=1 -U "$POSTGRES_USER" -d "$POSTGRES_DB"' < database/schema.sql
 
 echo "Publishing and Deploying API..."
 dotnet publish ./src/MeterSystem.Api/MeterSystem.Api.csproj -t:PublishContainer

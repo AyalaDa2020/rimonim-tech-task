@@ -24,6 +24,9 @@ spec:
               value: postgres
             - name: POSTGRES_PASSWORD
               value: postgres
+          volumeMounts:
+            - name: schema
+              mountPath: /docker-entrypoint-initdb.d
           readinessProbe:
             exec:
               command:
@@ -40,6 +43,10 @@ spec:
                 - pg_isready -U "$POSTGRES_USER" -d "$POSTGRES_DB"
             initialDelaySeconds: 15
             periodSeconds: 20
+      volumes:
+        - name: schema
+          configMap:
+            name: postgres-schema
 ---
 apiVersion: v1
 kind: Service

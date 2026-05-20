@@ -22,6 +22,7 @@ public class MeterLogic
             var json = JsonSerializer.Serialize(message);
             var body = Encoding.UTF8.GetBytes(json);
 
+            // Optional: set Persistent = true to survive RabbitMQ restarts (trades throughput for durability)
             await channel.BasicPublishAsync(
                 exchange: "",
                 routingKey: "meter-readings",
