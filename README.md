@@ -48,6 +48,15 @@ Send a POST request to `/api/readings`:
 
 A `202 Accepted` response means the reading was queued successfully.
 
+Or send a Base64-encoded protobuf payload to `/api/readings/raw`:
+
+```json
+{
+  "meter_number": 12345,
+  "data": "ChEKBgik9unNBhEK16NwPUqTQAoRCgYIoO/pzQYR16NwPQpKk0A="
+}
+```
+
 ## Verifying Data in PostgreSQL
 
 ```bash
@@ -64,9 +73,7 @@ kubectl exec -it deployment/postgres -- psql -U postgres -d meters -c "SELECT * 
 
 - **Shared MeterData model** — used a single shared model between the API and Worker services. A separate HTTP DTO layer could have been introduced, but since both structures are currently identical, a shared model kept the implementation simpler and easier to maintain
 
-## What's Next
-
-- `POST /api/readings/raw` (optional) — not yet implemented due to time constraints. Would parse a Base64-encoded protobuf payload using `Google.Protobuf`, convert it to `MeterData`, and publish to the same queue as the standard endpoint.
+- **POST /api/readings/raw** — accepts a JSON payload containing a Base64-encoded protobuf message. The protobuf schema is defined in `Protos/meter_data.proto`, and the corresponding C# classes are generated automatically at build time using `Grpc.Tools`. After decoding and deserialization, the readings are converted into `MeterData` and published to the same RabbitMQ queue used by the standard endpoint.
 
 ## Architecture Diagram
 
